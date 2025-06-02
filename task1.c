@@ -1,29 +1,33 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include <sys/wait.h>
 
-int main() {
-    pid_t pids[10];
 
-    for (int i = 0; i < 10; i++) {
-        pid_t pid = fork();
-        if (pid == 0) {
-            printf("Child %d started with PID %d\n", i, getpid());
-            exit(0);
-        } else {
-            pids[i] = pid;
-        }
-    }
-    sleep(3);
-    
-    printf("\n");
-    for (int i = 0; i < 10; i++) {
-        int status;
-        pid_t pid = wait(&status);
-        if (WIFEXITED(status)) {
-            printf("child %d (PID %d) exited with code %d\n", i, pids[i], WEXITSTATUS(status));
-        }
-    }
-    return 0;
+void print_usernames();
+
+int main(){
+	print_usernames();
+	return 0;
 }
+
+void print_usernames(){
+	FILE *file = popen("getent passwd", "r");
+	if (!file){
+		printf("error running the command");
+		return;
+	}
+	char line[256];
+	uid_t my_userID = getuid();
+
+	while(fgets(line, sizeof(line), file)){
+		char *username = strtok(line, ":");
+		strtok(NULL, ":"); //password
+		char *uid = strtok(NULL, ":");
+		if(atoi(uid) >= 1000 && atoi(uid) != my_userID){
+			printf("%s \n", username);
+		}
+	}
+	pclose(file);
+}
+
